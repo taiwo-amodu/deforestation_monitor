@@ -4,7 +4,10 @@
 
 1. Create `backend/.env` (copy from `.env.example`) and set:
    - `GEE_SERVICE_ACCOUNT`
-   - `GEE_JSON_KEY_PATH`
+   - Provide the JSON key using one of:
+     - `GEE_JSON_KEY_PATH` (local/dev file path), or
+     - `GEE_JSON_KEY_CONTENT` (paste JSON into an env var), or
+     - `GEE_JSON_KEY_B64` (base64 of the JSON key file; recommended for Render)
 
 2. Install dependencies:
    - `pip install -r requirements.txt`

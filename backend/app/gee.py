@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+import base64
+import json
 import os
+import tempfile
 from typing import Any, Iterable
+from pathlib import Path
 
 import ee
 
@@ -23,13 +27,51 @@ def init_ee_from_env() -> None:
 
     service_account = os.getenv("GEE_SERVICE_ACCOUNT")
     json_key_path = os.getenv("GEE_JSON_KEY_PATH")
+    json_key_content = os.getenv("GEE_JSON_KEY_CONTENT")
+    json_key_b64 = os.getenv("GEE_JSON_KEY_B64")
 
-    if not service_account or not json_key_path:
+    if not service_account:
         raise RuntimeError(
-            "Missing Earth Engine env vars. Set GEE_SERVICE_ACCOUNT and GEE_JSON_KEY_PATH."
+            "Missing Earth Engine env var. Set GEE_SERVICE_ACCOUNT."
         )
 
-    credentials = ee.ServiceAccountCredentials(service_account, json_key_path)
+    key_file_path: str | None = None
+
+    # Local dev: file path.
+    if json_key_path:
+        key_file_path = json_key_path
+
+    # Render-friendly: raw JSON in an env var.
+    elif json_key_content:
+        content = json_key_content
+        # If Render saved the JSON as a single line with escaped newlines,
+        # convert them back to real newlines before writing to disk.
+        if "\\n" in content and "\n" not in content:
+            content = content.replace("\\n", "\n")
+
+        # Validate JSON to catch truncation early.
+        json.loads(content)
+
+        fd, tmp_path = tempfile.mkstemp(prefix="gee-key-", suffix=".json")
+        os.close(fd)
+        Path(tmp_path).write_text(content, encoding="utf-8")
+        key_file_path = tmp_path
+
+    # Render-friendly: base64 of the JSON.
+    elif json_key_b64:
+        decoded = base64.b64decode(json_key_b64)
+        fd, tmp_path = tempfile.mkstemp(prefix="gee-key-", suffix=".json")
+        os.close(fd)
+        Path(tmp_path).write_bytes(decoded)
+        key_file_path = tmp_path
+
+    else:
+        raise RuntimeError(
+            "Missing Earth Engine JSON key. Provide one of: "
+            "GEE_JSON_KEY_PATH, GEE_JSON_KEY_CONTENT, or GEE_JSON_KEY_B64."
+        )
+
+    credentials = ee.ServiceAccountCredentials(service_account, key_file_path)
     ee.Initialize(credentials)
     _EE_INITIALIZED = True
 
