@@ -12,6 +12,20 @@
 2. Install dependencies:
    - `pip install -r requirements.txt`
 
+## Render (deploy)
+
+In the Render dashboard (or use the repo `render.yaml` as a blueprint):
+
+| Setting | Value |
+|--------|--------|
+| **Root Directory** | `backend` |
+| **Build Command** | `pip install -r requirements.txt` |
+| **Start Command** | `python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT` |
+
+`$PORT` is correct: Render injects it at runtime (do not hard-code a port). If Root Directory is empty, the start command fails because `app` is not on `PYTHONPATH`.
+
+Set `GEE_SERVICE_ACCOUNT` and `GEE_JSON_KEY_B64` (or another key option) under **Environment**.
+
 ## Run
 
 From `backend/`:

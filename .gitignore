@@ -3,6 +3,12 @@ backend/.env
 backend/secure/
 *.env
 
+# GCP service account JSON if downloaded to repo root by mistake
+deforestation-project-*.json
+
+# Local archives (often env keys); do not commit
+backend/Envin.zip
+
 # Python caches
 __pycache__/
 *.pyc
