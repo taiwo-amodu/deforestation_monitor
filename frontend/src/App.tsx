@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import L from 'leaflet'
-import type { LatLngExpression } from 'leaflet'
-import { FeatureGroup, LayersControl, MapContainer, TileLayer } from 'react-leaflet'
+import { FeatureGroup, LayersControl, MapContainer, TileLayer, useMap } from 'react-leaflet'
 import { EditControl } from 'react-leaflet-draw'
 
 type LatLon = { lat: number; lon: number }
@@ -13,6 +12,35 @@ type AnalyzeResponse = {
   confidence_score: number
   tif_url?: string | null
   png_url?: string | null
+}
+
+/** Earth Engine tiles render above the basemap; fit map to ROI after each successful analyze. */
+function MapAnalysisHelpers({
+  roiPoints,
+  zoomToRoiKey,
+}: {
+  roiPoints: LatLon[]
+  zoomToRoiKey: string | null
+}) {
+  const map = useMap()
+
+  useEffect(() => {
+    const name = 'geeTiles'
+    if (!map.getPane(name)) {
+      map.createPane(name)
+      const el = map.getPane(name)
+      if (el) el.style.zIndex = '250'
+    }
+  }, [map])
+
+  useEffect(() => {
+    if (!zoomToRoiKey || roiPoints.length < 3) return
+    const b = L.latLngBounds(roiPoints.map((p) => [p.lat, p.lon] as L.LatLngTuple))
+    if (!b.isValid()) return
+    map.fitBounds(b, { padding: [48, 48], maxZoom: 16, animate: true })
+  }, [map, zoomToRoiKey, roiPoints])
+
+  return null
 }
 
 function App() {
@@ -151,15 +179,34 @@ function App() {
     shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
   })
 
-  const roiPositions: LatLngExpression[] = roiPoints.map((p) => [p.lat, p.lon])
-
   return (
     <div className="mc-app">
       <aside className="mc-sidebar">
-        <h1 className="mc-title">Deforestation Monitor</h1>
-        <div className="mc-subtitle">
-          Draw a polygon and click Analyze to identify deforested areas in that polygon.
+        <div className="mc-brand">
+          <img
+            className="mc-titleLogo"
+            src="/logo-tree.png"
+            alt=""
+            width={48}
+            height={48}
+            decoding="async"
+          />
+          <h1 className="mc-title">Deforestation Monitor</h1>
         </div>
+        <div className="mc-subtitle">
+          SAR + NDVI fusion over an area you draw on the map.
+        </div>
+
+        <section className="mc-guide" aria-label="Quick guide">
+          <div className="mc-guideTitle">Quick guide</div>
+          <ul className="mc-guideList">
+            <li>Pan/zoom to your area.</li>
+            <li>Polygon tool on the map (top-right); double-click to close the shape.</li>
+            <li>Pick Baseline year and Comparison year.</li>
+            <li>Click Analyze — red overlay shows fused deforestation.</li>
+            <li>Clear removes the shape; use layer control to switch basemap.</li>
+          </ul>
+        </section>
 
         <section className="mc-section">
           <div className="mc-controlsTitle">Deforestation Analysis</div>
@@ -217,42 +264,7 @@ function App() {
 
         {result && (
           <section className="mc-card" aria-live="polite">
-            <div className="mc-kpi">
-              <div className="mc-kpiItem">
-                <div className="mc-kpiLabel">Hectares Impacted</div>
-                <div className="mc-kpiValue">
-                  {result.hectares_impacted.toFixed(2)}
-                </div>
-              </div>
-
-              <div className="mc-kpiGrid" style={{ marginTop: 12 }}>
-                <div className="mc-kpiItem">
-                  <div className="mc-kpiLabel">Primary Location (Lat/Lon)</div>
-                  <div className="mc-kpiValue" style={{ fontSize: 14 }}>
-                    {result.primary_location.lat.toFixed(4)}, {result.primary_location.lon.toFixed(4)}
-                  </div>
-                </div>
-
-                <div className="mc-kpiItem">
-                  <div className="mc-kpiLabel">Confidence Score</div>
-                  <div className="mc-confidence" style={{ marginTop: 6 }}>
-                    <div className="mc-confidenceDot" />
-                    <div style={{ flex: 1 }}>
-                      <div className="mc-kpiValue" style={{ fontSize: 18 }}>
-                        {result.confidence_score.toFixed(1)}
-                      </div>
-                      <div className="mc-confidenceBar" aria-hidden="true">
-                        <div
-                          className="mc-confidenceFill"
-                          style={{ width: `${Math.max(0, Math.min(100, result.confidence_score))}%` }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mc-downloadSection">
+            <div className="mc-downloadSection mc-downloadSection--only">
                 <div className="mc-downloadTitle">Download Deforestation Map</div>
                 <div className="mc-downloadRow">
                   <button
@@ -278,7 +290,6 @@ function App() {
                   GeoTIFF/PNG exports are best-effort from Earth Engine (large ROIs may fail).
                 </div>
               </div>
-            </div>
           </section>
         )}
       </aside>
@@ -290,6 +301,10 @@ function App() {
           zoom={2}
           scrollWheelZoom={true}
         >
+          <MapAnalysisHelpers
+            roiPoints={roiPoints}
+            zoomToRoiKey={result?.map_url ?? null}
+          />
           <LayersControl position="topright" collapsed={true}>
             <LayersControl.BaseLayer name="OSM Streets">
               <TileLayer
@@ -348,23 +363,32 @@ function App() {
             <TileLayer
               key={result.map_url}
               url={result.map_url}
-              opacity={0.6}
+              pane="geeTiles"
+              opacity={0.78}
+              maxZoom={22}
+              maxNativeZoom={18}
             />
           )}
         </MapContainer>
 
+        {roiPoints.length < 3 && (
+          <p className="mc-drawHint">
+            Click to start drawing area for deforestation analysis.
+          </p>
+        )}
+
         <div className="mc-legend">
           <div className="mc-legendRow">
-            <div className="mc-legendSwatch" />
-            <div>
-              Red overlay = areas where both SAR and NDVI indicate loss.
+            <div className="mc-legendSwatch" aria-hidden="true" />
+            <div className="mc-legendCopy">
+              <div>Red overlay = Deforested Area.</div>
+              {result ? (
+                <div className="mc-legendHectares">
+                  Hectares Impacted: {result.hectares_impacted.toFixed(2)}
+                </div>
+              ) : null}
             </div>
           </div>
-          {roiPositions.length >= 3 && (
-            <div style={{ marginTop: 8, color: 'rgba(232,245,255,0.7)' }}>
-              ROI vertices: {roiPositions.length}
-            </div>
-          )}
         </div>
       </div>
 

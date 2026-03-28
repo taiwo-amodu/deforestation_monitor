@@ -222,19 +222,67 @@ body {
   background: rgba(15, 23, 42, 0.2);
 }
 
+.mc-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 2px;
+}
+
+.mc-titleLogo {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
 .mc-title {
   font-family: Inter, ui-sans-serif, system-ui;
   letter-spacing: 0.7px;
   text-transform: uppercase;
   font-size: 16px;
   margin: 0;
+  line-height: 1.2;
 }
 
 .mc-subtitle {
-  margin: 6px 0 14px;
+  margin: 6px 0 10px;
   color: rgba(15, 23, 42, 0.6);
   font-size: 13px;
   line-height: 1.25;
+}
+
+.mc-guide {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  border-radius: 12px;
+  font-size: 12px;
+  line-height: 1.35;
+  color: rgba(15, 23, 42, 0.78);
+}
+
+.mc-guideTitle {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(15, 23, 42, 0.45);
+  margin: 0 0 6px;
+}
+
+.mc-guideList {
+  margin: 0;
+  padding-left: 1.05rem;
+}
+
+.mc-guideList li {
+  margin-bottom: 3px;
+}
+
+.mc-guideList li:last-child {
+  margin-bottom: 0;
 }
 
 .mc-section {
@@ -344,12 +392,6 @@ body {
   gap: 8px;
 }
 
-.mc-kpiGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
 .mc-kpiItem {
   background: rgba(15, 23, 42, 0.02);
   border: 1px solid rgba(15, 23, 42, 0.07);
@@ -369,34 +411,6 @@ body {
   margin-top: 4px;
 }
 
-.mc-confidence {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.mc-confidenceDot {
-  width: 12px;
-  height: 12px;
-  border-radius: 999px;
-  background: #ef4444;
-  box-shadow: 0 0 12px rgba(239, 68, 68, 0.25);
-}
-
-.mc-confidenceBar {
-  height: 8px;
-  width: 100%;
-  border-radius: 999px;
-  border: 1px solid rgba(15, 23, 42, 0.1);
-  overflow: hidden;
-  background: rgba(15, 23, 42, 0.04);
-}
-
-.mc-confidenceFill {
-  height: 100%;
-  background: linear-gradient(90deg, rgba(0, 245, 255, 0.9), rgba(0, 255, 198, 0.9));
-}
-
 .mc-controlsTitle {
   font-size: 13px;
   font-weight: 900;
@@ -413,6 +427,36 @@ body {
 .mc-map {
   position: absolute;
   inset: 0;
+}
+
+/* Sits just left of Leaflet top-right toolbars (layers above draw). */
+.mc-drawHint {
+  position: absolute;
+  top: 56px;
+  right: 52px;
+  z-index: 1001;
+  margin: 0;
+  max-width: min(240px, calc(100vw - 120px));
+  padding: 8px 10px;
+  font-size: 11px;
+  line-height: 1.35;
+  font-weight: 600;
+  color: #0f172a;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 10px;
+  box-shadow: 0 6px 20px rgba(2, 6, 23, 0.12);
+  pointer-events: none;
+}
+
+@media (max-width: 900px) {
+  .mc-drawHint {
+    top: 52px;
+    right: 48px;
+    max-width: min(200px, calc(100vw - 96px));
+    font-size: 10px;
+    padding: 6px 8px;
+  }
 }
 
 .mc-basemapToggle {
@@ -508,6 +552,12 @@ body {
   border-top: 1px solid rgba(15, 23, 42, 0.07);
 }
 
+.mc-downloadSection--only {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
 .mc-downloadTitle {
   font-size: 12px;
   font-weight: 900;
@@ -561,8 +611,19 @@ body {
 
 .mc-legendRow {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
+}
+
+.mc-legendCopy {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mc-legendHectares {
+  font-weight: 700;
+  color: rgba(232, 245, 255, 0.92);
 }
 
 .mc-legendSwatch {
